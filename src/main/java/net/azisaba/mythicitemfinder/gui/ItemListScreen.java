@@ -87,7 +87,7 @@ public class ItemListScreen implements InventoryHolder {
                         ItemMeta meta = Objects.requireNonNull(stack.getItemMeta());
                         List<String> lore = meta.hasLore() ? Objects.requireNonNull(meta.getLore()) : new ArrayList<>();
                         String mythicType = ItemStackUtil.getMythicType(stack);
-                        String mythicFile = ItemStackUtil.getStringTag(stack, "MYTHIC_FILE");
+                        String mythicFile = ItemStackUtil.getMythicFile(stack);
                         if (showMythicType) {
                             lore.add("");
                             lore.add("§7MMID: " + mythicType);
@@ -166,7 +166,7 @@ public class ItemListScreen implements InventoryHolder {
             if (e.getSlot() < 45) {
                 if (screen.enableExcludeButton && e.isRightClick() && e.getSlot() < screen.itemsInCurrentPage.size()) {
                     if (e.isShiftClick() && e.getWhoClicked().hasPermission("mythicitemfinder.view-file")) {
-                        String location = ItemStackUtil.getStringTag(screen.itemsInCurrentPage.get(e.getSlot()), "MYTHIC_FILE");
+                        String location = ItemStackUtil.getMythicFile(screen.itemsInCurrentPage.get(e.getSlot()));
                         List<String> list = MythicItemFinder.getInstance().getConfig().getStringList("excluded-files");
                         if (!list.remove(location)) {
                             list.add(location);
