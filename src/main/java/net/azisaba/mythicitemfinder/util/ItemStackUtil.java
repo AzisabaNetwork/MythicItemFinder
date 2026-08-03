@@ -12,10 +12,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.lumine.mythic.bukkit.MythicBukkit;
-import io.lumine.mythic.core.items.MythicItem;
+import net.azisaba.mythicitemfinder.MythicItemFinder;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataType;
 
 public class ItemStackUtil {
+    private static final NamespacedKey MYTHIC_TYPE_KEY = new NamespacedKey(MythicItemFinder.getInstance(), "mythic_type");
+    private static final NamespacedKey MYTHIC_FILE_KEY = new NamespacedKey(MythicItemFinder.getInstance(), "mythic_file");
+
     public static @NotNull String getDisplayNameOrMaterialForSort(@NotNull ItemStack item) {
         if (!item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) {
             String name = item.getI18NDisplayName();
@@ -28,20 +32,20 @@ public class ItemStackUtil {
     }
 
     public static @NotNull String getMythicType(@Nullable ItemStack item) {
-        if (item == null) return "";
-        io.lumine.mythic.bukkit.adapters.BukkitItemStack mythicStack = new io.lumine.mythic.bukkit.adapters.BukkitItemStack(item);
-        io.lumine.mythic.core.utils.jnbt.CompoundTag nbt = mythicStack.getNBT();
-        if (nbt != null && nbt.containsKey("MYTHIC_TYPE")) {
-            return nbt.getString("MYTHIC_TYPE");
-        }
-        return "";
+        if (item == null || !item.hasItemMeta()) return "";
+        return item.getItemMeta().getPersistentDataContainer().getOrDefault(MYTHIC_TYPE_KEY, PersistentDataType.STRING, "");
     }
 
     public static @NotNull String getMythicFile(@Nullable ItemStack item) {
-        String type = getMythicType(item);
-        if (type.isEmpty()) return "";
-        Optional<MythicItem> mythicItem = MythicBukkit.inst().getItemManager().getItem(type);
-        return mythicItem.isPresent() ? mythicItem.get().getFile() : "";
+        if (item == null || !item.hasItemMeta()) return "";
+        return item.getItemMeta().getPersistentDataContainer().getOrDefault(MYTHIC_FILE_KEY, PersistentDataType.STRING, "");
+    }
+
+    public static void markMythicItem(@NotNull ItemStack item, @NotNull String type, @NotNull String file) {
+        ItemMeta meta = Objects.requireNonNull(item.getItemMeta());
+        meta.getPersistentDataContainer().set(MYTHIC_TYPE_KEY, PersistentDataType.STRING, type);
+        meta.getPersistentDataContainer().set(MYTHIC_FILE_KEY, PersistentDataType.STRING, file);
+        item.setItemMeta(meta);
     }
 
     public static @NotNull ItemStack createItem(@NotNull Material material, @NotNull String name) {

@@ -1,7 +1,7 @@
 name: MythicItemFinder
 version: 1.0.0
 main: net.azisaba.mythicitemfinder.MythicItemFinder
-api-version: 1.13
+api-version: 1.16
 depend:
   - MythicMobs
 softdepend:

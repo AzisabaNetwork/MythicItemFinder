@@ -4,6 +4,7 @@ import io.lumine.mythic.bukkit.MythicBukkit;
 import io.lumine.mythic.core.items.ItemExecutor;
 import net.azisaba.mythicitemfinder.MythicItemFinder;
 import net.azisaba.mythicitemfinder.gui.ItemListScreen;
+import net.azisaba.mythicitemfinder.util.ItemStackUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -27,28 +28,35 @@ public class MythicItemFinderCommand implements TabExecutor {
         List<String> excludedMythicTypes = MythicItemFinder.getInstance().getConfig().getStringList("excluded-mythic-types");
         List<String> excludedFiles = MythicItemFinder.getInstance().getConfig().getStringList("excluded-files");
         boolean viewExcluded = sender.hasPermission("mythicitemfinder.view-excluded");
-        Bukkit.getScheduler().runTaskAsynchronously(MythicItemFinder.getInstance(), () -> {
-            ItemExecutor itemManager = MythicBukkit.inst().getItemManager();
-            List<ItemStack> items = itemManager.getItems().stream().map(item -> {
-                if (!viewExcluded) {
-                    if (excludedMythicTypes.contains(item.getInternalName())) {
-                        return null;
-                    }
-                    if (excludedFiles.contains(item.getFile())) {
-                        return null;
-                    }
+        MythicItemFinder plugin = MythicItemFinder.getInstance();
+        plugin.getItemCache().getOrLoad(this::generateItems).thenAccept(cachedItems -> {
+            List<ItemStack> items = cachedItems.stream().filter(stack -> {
+                if (viewExcluded) {
+                    return true;
                 }
-                ItemStack stack = itemManager.getItemStack(item.getInternalName());
-                if (!viewExcluded && MythicItemFinder.getRequiredLevelIfEnabled(stack) <= 0) {
-                    return null;
-                }
-                return stack;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
+                return !excludedMythicTypes.contains(ItemStackUtil.getMythicType(stack))
+                        && !excludedFiles.contains(ItemStackUtil.getMythicFile(stack))
+                        && MythicItemFinder.getRequiredLevelIfEnabled(stack) > 0;
+            }).collect(Collectors.toList());
             Bukkit.getScheduler().runTask(
-                    MythicItemFinder.getInstance(),
+                    plugin,
                     () -> ((Player) sender).openInventory(new ItemListScreen(items, viewExcluded).getInventory()));
         });
         return true;
+    }
+
+    private @NotNull List<ItemStack> generateItems() {
+        ItemExecutor itemManager = MythicBukkit.inst().getItemManager();
+        return itemManager.getItems().stream().map(item -> {
+            try {
+                ItemStack stack = itemManager.getItemStack(item.getInternalName());
+                ItemStackUtil.markMythicItem(stack, item.getInternalName(), item.getFile().getName());
+                return stack;
+            } catch (Exception e) {
+                MythicItemFinder.getInstance().getLogger().warning("Failed to generate MythicItem: " + item.getInternalName() + " (" + e.getMessage() + ")");
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override

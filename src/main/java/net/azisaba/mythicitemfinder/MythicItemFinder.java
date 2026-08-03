@@ -1,6 +1,7 @@
 package net.azisaba.mythicitemfinder;
 
 import net.azisaba.lifepvelevel.util.Util;
+import net.azisaba.mythicitemfinder.cache.MythicItemCache;
 import net.azisaba.mythicitemfinder.command.MythicItemFinderCommand;
 import net.azisaba.mythicitemfinder.gui.ItemListScreen;
 import net.azisaba.mythicitemfinder.sorter.GenericSorters;
@@ -15,6 +16,7 @@ import java.util.Objects;
 
 public final class MythicItemFinder extends JavaPlugin {
     private final SorterRegistry sorterRegistry = new SorterRegistry();
+    private final MythicItemCache itemCache = new MythicItemCache(this);
 
     public static @NotNull MythicItemFinder getInstance() {
         return MythicItemFinder.getPlugin(MythicItemFinder.class);
@@ -24,6 +26,7 @@ public final class MythicItemFinder extends JavaPlugin {
     public void onEnable() {
         initSorterRegistry();
         Bukkit.getPluginManager().registerEvents(new ItemListScreen.EventListener(), this);
+        Bukkit.getPluginManager().registerEvents(itemCache, this);
         Objects.requireNonNull(getCommand("mythicitemfinder")).setExecutor(new MythicItemFinderCommand());
     }
 
@@ -42,6 +45,10 @@ public final class MythicItemFinder extends JavaPlugin {
 
     public @NotNull SorterRegistry getSorterRegistry() {
         return sorterRegistry;
+    }
+
+    public @NotNull MythicItemCache getItemCache() {
+        return itemCache;
     }
 
     public static long getRequiredLevelIfEnabled(@NotNull ItemStack item) {
